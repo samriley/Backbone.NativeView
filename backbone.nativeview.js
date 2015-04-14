@@ -108,6 +108,17 @@
         selector = null;
       }
 
+      // Given that `focus` and `blur` events do not bubble, do not delegate these events
+      if (['focus', 'blur'].indexOf(eventName) !== -1) {
+        var els = this.el.querySelectorAll(selector);
+        for (var i = 0, len = els.length; i < len; i++) {
+          var item = els[i];
+          elementAddEventListener.call(item, eventName, listener, false);
+          this._domEvents.push({el: item, eventName: eventName, handler: listener});
+        }
+        return listener;
+      }
+
       var root = this.el;
       var handler = selector ? function (e) {
         var node = e.target || e.srcElement;
@@ -120,7 +131,7 @@
       } : listener;
 
       elementAddEventListener.call(this.el, eventName, handler, false);
-      this._domEvents.push({eventName: eventName, handler: handler, listener: listener, selector: selector});
+      this._domEvents.push({el: this.el, eventName: eventName, handler: handler, listener: listener, selector: selector});
       return handler;
     },
 
@@ -143,7 +154,7 @@
 
           if (!match) continue;
 
-          elementRemoveEventListener.call(this.el, item.eventName, item.handler, false);
+          elementRemoveEventListener.call(item.el, item.eventName, item.handler, false);
           this._domEvents.splice(indexOf(handlers, item), 1);
         }
       }
@@ -155,8 +166,8 @@
       if (this.el) {
         for (var i = 0, len = this._domEvents.length; i < len; i++) {
           var item = this._domEvents[i];
-          elementRemoveEventListener.call(this.el, item.eventName, item.handler, false);
-        };
+          elementRemoveEventListener.call(item.el, item.eventName, item.handler, false);
+        }
         this._domEvents.length = 0;
       }
       return this;
